@@ -43,18 +43,23 @@ class Server:
         # Create numpy array with adequate poses
         global prev_left_meas_velocity
         global prev_right_meas_velocity
-        new_row = np.zeros((1, 5))
+        global velocity_meas_index
+        new_row = np.zeros((1, 6))
 
-        if self.velocity_left_meas.data != prev_left_meas_velocity and self.velocity_left_cmd.data != prev_left_meas_velocity:
+        if (self.velocity_left_meas.data != prev_left_meas_velocity
+                and self.velocity_left_cmd.data != prev_left_meas_velocity):
             prev_left_meas_velocity = self.velocity_left_meas.data
             prev_right_meas_velocity = self.velocity_right_meas.data
+            velocity_meas_index += 1
 
-        new_row = np.array(([rospy.get_rostime().secs, self.velocity_left_cmd.data, prev_left_meas_velocity,
+        new_row = np.array(([rospy.get_rostime().secs, velocity_meas_index,
+                             self.velocity_left_cmd.data, prev_left_meas_velocity,
                              self.velocity_right_cmd.data, prev_right_meas_velocity]))
         return np.vstack((array, new_row))
 
     def export_array(self, array):
-        df = pd.DataFrame(array)
+        df = pd.DataFrame(data=array, columns=['ros_time', 'wheel_meas_index', 'cmd_left_vel', 'meas_left_vel',
+                                               'cmd_right_vel', 'meas_right_vel'])
         df.to_csv('/home/dominic/Desktop/data.csv')
 
 if __name__ == '__main__':
@@ -65,17 +70,19 @@ if __name__ == '__main__':
 
     rospy.Subscriber('calib_switch', Bool, server.switch_callback)
     rospy.Subscriber('odom', Twist , server.pose_callback)
-    rospy.Subscriber('/left_drive/velocity', Float64, server.velocity_right_cmd_callback)
+    rospy.Subscriber('/left_drive/velocity', Float64, server.velocity_left_cmd_callback)
     rospy.Subscriber('/left_drive/status/speed', Float64, server.velocity_left_meas_callback)
-    rospy.Subscriber('/right_drive/velocity', Float64, server.velocity_left_cmd_callback)
+    rospy.Subscriber('/right_drive/velocity', Float64, server.velocity_right_cmd_callback)
     rospy.Subscriber('/right_drive/status/speed', Float64, server.velocity_right_meas_callback)
 
-    array = np.zeros((1, 5))
+    array = np.zeros((1, 6))
     odom_index = 0
     global prev_left_meas_velocity
     prev_left_meas_velocity = 0
     global prev_right_meas_velocity
     prev_right_meas_velocity = 0
+    global velocity_meas_index
+    velocity_meas_index = 0
     while not rospy.is_shutdown():
         if server.switch.data:
             #rospy.loginfo('on')
