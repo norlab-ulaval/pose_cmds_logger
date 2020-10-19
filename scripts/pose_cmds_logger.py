@@ -49,7 +49,7 @@ class Server:
             prev_left_meas_velocity = self.velocity_left_meas.data
             prev_right_meas_velocity = self.velocity_right_meas.data
 
-        new_row = np.array(([rospy.get_rostime(), self.velocity_left_cmd.data, prev_left_meas_velocity,
+        new_row = np.array(([rospy.get_rostime().secs, self.velocity_left_cmd.data, prev_left_meas_velocity,
                              self.velocity_right_cmd.data, prev_right_meas_velocity]))
         return np.vstack((array, new_row))
 
@@ -78,8 +78,9 @@ if __name__ == '__main__':
     prev_right_meas_velocity = 0
     while not rospy.is_shutdown():
         if server.switch.data:
-            rospy.loginfo('on')
+            #rospy.loginfo('on')
             array = server.log_msgs(array)
         else:
-            rospy.loginfo('false')
+            #rospy.loginfo('false')
             server.export_array(array)
+        rate.sleep()
