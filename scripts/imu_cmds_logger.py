@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     rospy.Subscriber('calib_switch', Bool, server.switch_callback)
     rospy.Subscriber('/joint_states', JointState, server.js_callback)
-    rospy.Subscriber('/MTI_imu/data_raw', Imu, server.imu_callback)
+    rospy.Subscriber('/MTI30_imu/data_raw', Imu, server.imu_callback)
     rospy.Subscriber('/right_drive/velocity', Float64, server.velocity_right_cmd_callback)
     rospy.Subscriber('/right_drive/status/speed', Float64, server.velocity_right_meas_callback)
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         if server.switch.data:
             #rospy.loginfo('on')
             array = server.log_msgs(array)
-        else:
+        elif not server.switch.data:
             #rospy.loginfo('false')
             server.export_array(array)
         rate.sleep()

@@ -50,7 +50,7 @@ class Server:
         global prev_icp_x
         global prev_icp_y
         global icp_index
-        new_row = np.zeros((1, 12))
+        new_row = np.zeros((1, 13))
 
         if (self.pose.pose.pose.position.x != prev_icp_x
                 and self.pose.pose.pose.position.y != prev_icp_y):
@@ -58,19 +58,18 @@ class Server:
             prev_icp_y = self.pose.pose.pose.position.y
             icp_index += 1
 
-        new_row = np.array(([rospy.get_rostime(), icp_index,
+        new_row = np.array(([rospy.get_rostime(), self.joy_switch.data, icp_index,
                              self.velocity_left_cmd.data, self.velocity_left_meas.data,
                              self.velocity_right_cmd.data, self.velocity_right_meas.data,
                              self.pose.pose.pose.position.x, self.pose.pose.pose.position.y,
                              self.pose.pose.pose.orientation.x, self.pose.pose.pose.orientation.y,
                              self.pose.pose.pose.orientation.z, self.pose.pose.pose.orientation.w]))
 
-        if self.joy_switch.data:
-            return np.vstack((array, new_row))
+        return np.vstack((array, new_row))
 
     def export_array(self, array):
         rospy.loginfo('Converting Array to DataFrame')
-        df = pd.DataFrame(data=array, columns=['ros_time', 'icp_index',
+        df = pd.DataFrame(data=array, columns=['ros_time', 'joy_switch', 'icp_index',
                                                'cmd_left_vel', 'meas_left_vel',
                                                'cmd_right_vel', 'meas_right_vel',
                                                'icp_pos_x', 'icp_pos_y',
@@ -94,7 +93,7 @@ if __name__ == '__main__':
     rospy.Subscriber('/right_drive/velocity', Float64, server.velocity_right_cmd_callback)
     rospy.Subscriber('/right_drive/status/speed', Float64, server.velocity_right_meas_callback)
 
-    array = np.zeros((1, 12))
+    array = np.zeros((1, 13))
     odom_index = 0
     global prev_icp_x
     prev_icp_x = 0
