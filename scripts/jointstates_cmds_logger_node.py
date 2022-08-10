@@ -81,7 +81,7 @@ def save_data_handle(req, array):
         rospy.loginfo('Converting Array to DataFrame')
         df = pd.DataFrame(data=array, columns=['ros_time', 'joy_switch', 'icp_index', 'good_calib_step',
                                                'wheel_pos_left', 'wheel_pos_right',
-                                               'cmd_vel_x', 'cmd_vel_y',
+                                               'cmd_vel_x', 'cmd_vel_omega',
                                                'icp_pos_x', 'icp_pos_y', 'icp_pos_z',
                                                'icp_quat_x', 'icp_quat_y',
                                                'icp_quat_z', 'icp_quat_w',
