@@ -1,7 +1,7 @@
 <launch>
   <!-- wheel velocities -->
-<!--  <node pkg="pose_cmds_logger" name="pose_cmds_logger_node" type="pose_cmds_logger_node.py" output="screen">-->
-<!--  </node>-->
+  <node pkg="pose_cmds_logger" name="pose_cmds_logger_node" type="pose_cmds_logger_node.py" output="screen">
+  </node>
 
   <!-- imu velocities -->
   <!-- node pkg="pose_cmds_logger" name="imu_cmds_logger" type="imu_cmds_logger.py" output="screen">
@@ -11,8 +11,8 @@
   <!--node pkg="pose_cmds_logger" name="autorally_dataset_logger" type="autorally_dataset_logger.py" output="screen">
   </node -->
 
-  <!-- husky dataset -->
-  <node pkg="pose_cmds_logger" name="husky_dataset_logger" type="jointstates_cmds_logger_node.py" output="screen">
-  </node>
+  <!-- joint_states -->
+<!--  <node pkg="pose_cmds_logger" name="dataset_logger" type="jointstates_cmds_logger_node.py" output="screen">-->
+<!--  </node>-->
 
 </launch>

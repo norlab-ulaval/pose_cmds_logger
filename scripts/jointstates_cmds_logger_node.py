@@ -86,8 +86,8 @@ def save_data_handle(req, array):
                                                'icp_quat_x', 'icp_quat_y',
                                                'icp_quat_z', 'icp_quat_w',
                                                'imu_x', 'imu_y', 'imu_z'])
-        rospy.loginfo('Exporting DataFrame as .csv')
-        df.to_csv(req.data_file_name.data)
+        rospy.loginfo('Exporting DataFrame as .pkl')
+        df.to_pickle(req.data_file_name.data)
         rospy.loginfo('Data export done!')
         return []
 
