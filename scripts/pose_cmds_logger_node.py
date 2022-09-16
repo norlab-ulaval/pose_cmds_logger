@@ -6,6 +6,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from pose_cmds_logger.srv import *
 import message_filters
+from warthog_msgs.msg import Status
 
 import numpy as np
 import pandas as pd
@@ -25,6 +26,7 @@ current_right = Float64()
 imu_vel = Imu()
 cmd_vel = Twist()
 calib_state = String()
+estop = Status()
 
 def switch_callback(msg):
     # "Store" message received.
@@ -94,12 +96,17 @@ def cmd_vel_callback(msg):
     global cmd_vel
     cmd_vel = msg
 
+def estop_callback(msg):
+    # "Store" message received.
+    global estop
+    estop = msg.stop_engaged
+
 def log_msgs(array):
     # Create numpy array with adequate poses
     global prev_icp_x
     global prev_icp_y
     global icp_index
-    new_row = np.zeros((1, 24))
+    new_row = np.zeros((1, 25))
 
     if (pose.pose.pose.position.x != prev_icp_x
             and pose.pose.pose.position.y != prev_icp_y):
@@ -107,7 +114,7 @@ def log_msgs(array):
         prev_icp_y = pose.pose.pose.position.y
         icp_index += 1
 
-    new_row = np.array(([rospy.get_rostime(), joy_switch.data, icp_index, calib_state,
+    new_row = np.array(([rospy.get_rostime(), joy_switch.data, icp_index, calib_state, estop,
                          velocity_left_cmd.data, velocity_left_meas.data,
                          velocity_right_cmd.data, velocity_right_meas.data,
                          cmd_vel.linear.x, cmd_vel.angular.z,
@@ -124,7 +131,7 @@ def log_msgs(array):
 
 def save_data_handle(req, array):
         rospy.loginfo('Converting Array to DataFrame')
-        df = pd.DataFrame(data=array, columns=['ros_time', 'joy_switch', 'icp_index', 'calib_state',
+        df = pd.DataFrame(data=array, columns=['ros_time', 'joy_switch', 'icp_index', 'calib_state', 'estop',
                                                'cmd_left_vel', 'meas_left_vel',
                                                'cmd_right_vel', 'meas_right_vel',
                                                'cmd_vel_x', 'cmd_vel_omega',
@@ -146,6 +153,7 @@ if __name__ == '__main__':
 
     calib_sub = rospy.Subscriber('calib_switch', Bool, switch_callback)
     joy_sub = rospy.Subscriber('joy_switch', Bool, joy_callback)
+    estop_sub = rospy.Subscriber('mcu/status', Status, estop_callback)
     calib_state_sub = rospy.Subscriber('calib_state', String, calib_state_callback)
     icp_sub = rospy.Subscriber('/icp_odom', Odometry , pose_callback)
     cmd_left_sub = rospy.Subscriber('/left_drive/velocity', Float64, velocity_left_cmd_callback)
@@ -161,7 +169,7 @@ if __name__ == '__main__':
 
     save_service = rospy.Service('save_data', SaveData, lambda msg: save_data_handle(msg, array))
 
-    array = np.zeros((1, 24))
+    array = np.zeros((1, 25))
     odom_index = 0
     global prev_icp_x
     prev_icp_x = 0
