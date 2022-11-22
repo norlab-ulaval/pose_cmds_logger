@@ -114,19 +114,19 @@ class LoggerNode(Node):
 
     def cmd_vel_callback(self, msg):
         self.cmd_vel = msg
-
+        ## TODO: Find a better way to run the self.log_msgs() function when spinning
+        self.log_msgs()
 
     def log_msgs(self):
         # Create numpy array with adequate poses
-        new_row = np.zeros((1, 18))
-
-        if (pose.pose.pose.position.x != prev_icp_x
-                and pose.pose.pose.position.y != prev_icp_y):
-            self.prev_icp_x = pose.pose.pose.position.x
-            self.prev_icp_y = pose.pose.pose.position.y
+        if (self.pose.pose.pose.position.x != self.prev_icp_x
+                and self.pose.pose.pose.position.y != self.prev_icp_y):
+            self.prev_icp_x = self.pose.pose.pose.position.x
+            self.prev_icp_y = self.pose.pose.pose.position.y
             self.icp_index += 1
 
-        new_row = np.array(([self.get_clock.now(), self.joy_switch.data, self.icp_index, self.calib_state.data,
+        ## TODO: Fix clock call
+        new_row = np.array(([self.get_clock().now(), self.joy_switch.data, self.icp_index, self.calib_state.data,
                              self.velocity_left_meas.data, self.velocity_right_meas.data,
                              self.cmd_vel.linear.x, self.cmd_vel.angular.z,
                              self.pose.pose.pose.position.x, self.pose.pose.pose.position.y, self.pose.pose.pose.position.z,
@@ -135,7 +135,8 @@ class LoggerNode(Node):
                              self.imu_vel.angular_velocity.x, self.imu_vel.angular_velocity.y,
                              self.imu_vel.angular_velocity.z]))
 
-        return np.vstack((self.array, new_row))
+        self.array = np.vstack((self.array, new_row))
+        self.get_logger().info('test')
 
 # TODO: Add /mcu/status/stop_engaged listener
 
