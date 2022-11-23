@@ -125,8 +125,10 @@ class LoggerNode(Node):
             self.prev_icp_y = self.pose.pose.pose.position.y
             self.icp_index += 1
 
+        current_time_nanoseconds = self.get_clock().now().nanoseconds
+
         ## TODO: Fix clock call
-        new_row = np.array(([self.get_clock().now(), self.joy_switch.data, self.icp_index, self.calib_state.data,
+        new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data,
                              self.velocity_left_meas.data, self.velocity_right_meas.data,
                              self.cmd_vel.linear.x, self.cmd_vel.angular.z,
                              self.pose.pose.pose.position.x, self.pose.pose.pose.position.y, self.pose.pose.pose.position.z,
@@ -136,7 +138,6 @@ class LoggerNode(Node):
                              self.imu_vel.angular_velocity.z]))
 
         self.array = np.vstack((self.array, new_row))
-        self.get_logger().info('test')
 
 # TODO: Add /mcu/status/stop_engaged listener
 
@@ -165,11 +166,12 @@ def main(args=None):
         executor.add_node(logger_node)
 
         try:
-            # pause the program execution, waits for a request to kill the node (ctrl+c)
-            executor.spin()
+            while rclpy.ok():
+                executor.spin_once()
+                logger_node.log_msgs()
         finally:
             executor.shutdown()
-            controller_node.destroy_node()
+            logger_node.destroy_node()
     finally:
         # shutdown the ROS communication
         rclpy.shutdown()
