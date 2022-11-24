@@ -112,7 +112,7 @@ class LoggerNode(Node):
         self.velocity_left_meas = msg
 
     def velocity_right_meas_callback(self, msg):
-        self.velocity_right_cmd = msg
+        self.velocity_right_meas = msg
 
     def imu_callback(self, msg):
         self.imu_vel = msg
@@ -120,7 +120,6 @@ class LoggerNode(Node):
     def cmd_vel_callback(self, msg):
         self.cmd_vel = msg
         ## TODO: Find a better way to run the self.log_msgs() function when spinning
-        self.log_msgs()
 
     def log_msgs(self):
         # Create numpy array with adequate poses
@@ -129,10 +128,10 @@ class LoggerNode(Node):
             self.prev_icp_x = self.pose.pose.pose.position.x
             self.prev_icp_y = self.pose.pose.pose.position.y
             self.icp_index += 1
-        self.get_logger().info(str(self.icp_index))
 
         current_time_nanoseconds = int(self.get_clock().now().nanoseconds)
-        self.get_logger().info(str(current_time_nanoseconds))
+        self.get_logger().info(str(self.velocity_left_meas.data))
+        self.get_logger().info(str(self.velocity_right_meas.data))
 
         ## TODO: Fix clock call
         new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data,
@@ -179,8 +178,9 @@ def main(args=None):
         try:
             while rclpy.ok():
                 # executor.spin_once()
-                logger_node.log_msgs()
                 logger_node.rate.sleep()
+                logger_node.log_msgs()
+
 
         finally:
             # executor.shutdown()
