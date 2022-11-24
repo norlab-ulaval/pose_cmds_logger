@@ -3,12 +3,14 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
+import threading
 
 from std_msgs.msg import Float64, Bool, String
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 from norlab_icp_mapper_ros.srv import SaveMap
+from std_srvs.srv import Empty
 import message_filters
 
 import numpy as np
@@ -82,7 +84,7 @@ class LoggerNode(Node):
         self.cmd_vel = Twist()
         self.calib_state = String()
 
-        self.rate = self.create_rate(20)
+        self.rate = self.create_rate(20, self.get_clock())
 
         self.ave_service = self.create_service(SaveMap, 'save_data', self.save_data_callback)
 
@@ -91,6 +93,9 @@ class LoggerNode(Node):
         self.prev_icp_x = 0
         self.prev_icp_y = 0
         self.icp_index = 0
+
+        # self.set_parameter('use_sim_time', True)
+
 
     def switch_callback(self, msg):
         self.calib_switch = msg
@@ -124,8 +129,10 @@ class LoggerNode(Node):
             self.prev_icp_x = self.pose.pose.pose.position.x
             self.prev_icp_y = self.pose.pose.pose.position.y
             self.icp_index += 1
+        self.get_logger().info(str(self.icp_index))
 
-        current_time_nanoseconds = self.get_clock().now().nanoseconds
+        current_time_nanoseconds = int(self.get_clock().now().nanoseconds)
+        self.get_logger().info(str(current_time_nanoseconds))
 
         ## TODO: Fix clock call
         new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data,
@@ -153,7 +160,7 @@ class LoggerNode(Node):
         self.get_logger().info('Exporting DataFrame as .pkl')
         df.to_pickle(req.map_file_name.data)
         self.get_logger().info('Data export done!')
-        return None
+        return res
 
 def main(args=None):
     # initialize the ROS communication
@@ -162,15 +169,21 @@ def main(args=None):
     try:
         # declare the node constructor
         logger_node = LoggerNode()
-        executor = MultiThreadedExecutor()
+        executor = SingleThreadedExecutor()
         executor.add_node(logger_node)
+
+        # Spin in a separate thread
+        thread = threading.Thread(target=rclpy.spin, args=(logger_node,), daemon=True)
+        thread.start()
 
         try:
             while rclpy.ok():
-                executor.spin_once()
+                # executor.spin_once()
                 logger_node.log_msgs()
+                logger_node.rate.sleep()
+
         finally:
-            executor.shutdown()
+            # executor.shutdown()
             logger_node.destroy_node()
     finally:
         # shutdown the ROS communication
