@@ -1,5 +1,7 @@
 <launch>
 
+    <set_parameter name="use_sim_time" value="true" />
+
 <!--  Marmotte-->
       <node pkg="pose_cmds_logger" exec="pose_cmds_logger" name="logger_node" output="screen">
     </node>
