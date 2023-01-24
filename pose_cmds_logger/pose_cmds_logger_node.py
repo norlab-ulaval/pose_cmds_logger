@@ -5,7 +5,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallb
 from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 import threading
 
-from std_msgs.msg import Float64, Bool, String
+from std_msgs.msg import Float64, Bool, String, Int32
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
@@ -27,6 +27,11 @@ class LoggerNode(Node):
             Odometry,
             'calib_switch',
             self.switch_callback,
+            10)
+        self.calib_step_sub = self.create_subscription(
+            Int32,
+            'calib_step',
+            self.calib_step_callback,
             10)
         self.joy_sub = self.create_subscription(
             Odometry,
@@ -83,12 +88,13 @@ class LoggerNode(Node):
         self.imu_vel = Imu()
         self.cmd_vel = Twist()
         self.calib_state = String()
+        self.calib_step = Int32()
 
         self.rate = self.create_rate(20, self.get_clock())
 
         self.ave_service = self.create_service(SaveMap, 'save_data', self.save_data_callback)
 
-        self.array = np.zeros((1, 18))
+        self.array = np.zeros((1, 19))
         self.odom_index = 0
         self.prev_icp_x = 0
         self.prev_icp_y = 0
@@ -99,6 +105,9 @@ class LoggerNode(Node):
 
     def switch_callback(self, msg):
         self.calib_switch = msg
+
+    def calib_step_callback(self, msg):
+        self.calib_step = msg
 
     def joy_callback(self, msg):
         self.joy_switch = msg
@@ -134,7 +143,7 @@ class LoggerNode(Node):
         self.get_logger().info(str(self.velocity_right_meas.data))
 
         ## TODO: Fix clock call
-        new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data,
+        new_row = np.array(([current_time_nanoseconds, self.joy_switch.data, self.icp_index, self.calib_state.data, self.calib_step.data,
                              self.velocity_left_meas.data, self.velocity_right_meas.data,
                              self.cmd_vel.linear.x, self.cmd_vel.angular.z,
                              self.pose.pose.pose.position.x, self.pose.pose.pose.position.y, self.pose.pose.pose.position.z,
@@ -149,7 +158,7 @@ class LoggerNode(Node):
 
     def save_data_callback(self, req, res):
         self.get_logger().info('Converting Array to DataFrame')
-        df = pd.DataFrame(data=self.array, columns=['ros_time', 'joy_switch', 'icp_index', 'calib_state',
+        df = pd.DataFrame(data=self.array, columns=['ros_time', 'joy_switch', 'icp_index', 'calib_state', 'calib_step',
                                                    'meas_left_vel', 'meas_right_vel',
                                                    'cmd_vel_x', 'cmd_vel_omega',
                                                    'icp_pos_x', 'icp_pos_y', 'icp_pos_z',
